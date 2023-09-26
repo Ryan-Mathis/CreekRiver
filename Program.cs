@@ -49,6 +49,53 @@ app.MapGet("/api/campsites/{id}", (CreekRiverDbContext db, int id) =>
     return Results.Ok(db.Campsites.Include(c => c.CampsiteType).Single(c => c.Id == id));
 });
 
+app.MapPost("/api/campsites", (CreekRiverDbContext db, Campsite campsite) =>
+{
+    db.Campsites.Add(campsite);
+    db.SaveChanges();
+    return Results.Created($"/api/campsites/{campsite.Id}", campsite);
+});
+
+app.MapDelete("/api/campsites/{id}", (CreekRiverDbContext db, int id) =>
+{
+    Campsite campsite = db.Campsites.SingleOrDefault(campsite => campsite.Id == id);
+    if (campsite == null)
+    {
+        return Results.NotFound();
+    }
+    db.Campsites.Remove(campsite);
+    db.SaveChanges();
+    return Results.NoContent();
+
+});
+
+app.MapPut("/api/campsites/{id}", (CreekRiverDbContext db, int id, Campsite campsite) =>
+{
+    Campsite campsiteToUpdate = db.Campsites.SingleOrDefault(campsite => campsite.Id == id);
+    if (campsiteToUpdate == null)
+    {
+        return Results.NotFound();
+    }
+    campsiteToUpdate.Nickname = campsite.Nickname;
+    campsiteToUpdate.CampsiteTypeId = campsite.CampsiteTypeId;
+    campsiteToUpdate.ImageUrl = campsite.ImageUrl;
+
+    db.SaveChanges();
+    return Results.NoContent();
+});
+
+app.MapGet("/api/reservations", (CreekRiverDbContext db) =>
+{
+    return db.Reservations
+        .Include(r => r.UserProfile)
+        .Include(r => r.Campsite)
+        .ThenInclude(c => c.CampsiteType)
+        .OrderBy(res => res.CheckinDate)
+        .ToList();
+});
+
+
+
 app.Run();
 
 record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
