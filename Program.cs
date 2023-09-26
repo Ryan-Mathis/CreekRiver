@@ -33,24 +33,21 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapGet("/api/campsites", (CreekRiverDbContext db) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    return db.Campsites.ToList();
+});
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/api/campsites/{id}", (CreekRiverDbContext db, int id) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    Campsite foundCampsite = db.Campsites.FirstOrDefault(c => c.Id == id);
+
+    if (foundCampsite == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(db.Campsites.Include(c => c.CampsiteType).Single(c => c.Id == id));
+});
 
 app.Run();
 
